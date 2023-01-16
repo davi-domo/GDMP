@@ -1,0 +1,16 @@
+html,
+body {
+    /* on supprimme les marges html */
+    margin: 0;
+    padding: 0;
+    /* on cache les scroll */
+    overflow: hidden;
+    /* on empecheche la sélection */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+}

@@ -1,0 +1,38 @@
+##################################################
+# Syntax Coloring Map For Dtime-library
+##################################################
+
+##################################################
+# Classes, datatypes and C++ keywords	(KEYWORD1)
+##################################################
+
+DTime	KEYWORD1
+
+##################################################
+# Methods and Functions			(KEYWORD2)
+##################################################
+		
+isLeapYear	KEYWORD2
+setDate	KEYWORD2
+setTime	KEYWORD2
+setTimestamp	KEYWORD2
+tick	KEYWORD2
+wday	KEYWORD2
+
+##################################################
+# Constants				(LITERAL1)
+##################################################
+
+
+##################################################
+# Built-in variables			(LITERAL2)
+##################################################
+
+day	LITERAL2
+hour	LITERAL2
+minute	LITERAL2
+month	LITERAL2
+second	LITERAL2
+timestamp	LITERAL2
+year	LITERAL2
+
