@@ -1,6 +1,6 @@
 // fonction de mise a jour des datas par ajax
 function maj_value() {
-	var ajaxRequest = new XMLHttpRequest();
+	let ajaxRequest = new XMLHttpRequest();
 	ajaxRequest.onreadystatechange = function () {
 		if (ajaxRequest.readyState == 4) {
 			//si la requete est complete
@@ -8,7 +8,7 @@ function maj_value() {
 				let res = JSON.parse(ajaxRequest.response);
 				for (var key in res) {
 					// on met a jour les ID texte du svg
-					document.getElementById(key).innerHTML = res[key];
+					document.querySelector('#' + key).innerHTML = res[key];
 				}
 			}
 		}
