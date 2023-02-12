@@ -1,5 +1,12 @@
+@font-face {
+    font-family: "Eras Bold ITC";
+    src: url(ErasBoldITC.woff);
+  }
+
 html,
 body {
+    
+    font-family: "Eras Bold ITC" ;
     /* on supprimme les marges html */
     margin: 0;
     padding: 0;

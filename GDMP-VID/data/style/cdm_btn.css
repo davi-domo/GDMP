@@ -1,0 +1,58 @@
+@font-face {
+    font-family: my_font;
+    src: url(ErasBoldITC.woff);
+  }
+html,
+body {
+    
+    font-family: "my_font" ;
+    background-image: url("../img/background.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    /* on supprimme les marges html */
+    margin: 0;
+    padding: 0;
+    /* on cache les scroll */
+    overflow: hidden;
+    /* on empecheche la sélection */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#content{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.box_1{
+    background: linear-gradient(0deg, rgba(44,128,226,0.4) 0%, rgba(0,121,255,0.6) 100%);
+    border-radius: 0.7em;
+    padding: .5em;
+    min-width: 15vmax;
+    font-size: 2.5vmax;
+    color: white;white-space: nowrap;
+    overflow: hidden;
+}
+.txt_box_1{
+    font-size: 3vmax;
+}
+
+.box_2{
+    background: linear-gradient(0deg, rgba(44,128,226,0.4) 0%, rgba(0,121,255,0.6) 100%);
+    border-radius: 0.7em;
+    padding: .5em;
+    min-width: 15vmax;
+    font-size: 2vmax;
+    color: white;white-space: nowrap;
+    overflow: hidden;
+}
+.txt_box_2{
+    font-size: 2vmax;
+}

@@ -3,7 +3,7 @@
 -->
 
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 
 <head>
   <title>GDMP</title>
@@ -167,7 +167,7 @@
          y="225.56252"
          ry="3.9618776" /><text
          xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8px;line-height:0px;font-family:'Eras Bold ITC';-inkscape-font-specification:'Eras Bold ITC';text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.1;stroke-opacity:1"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8px;line-height:0px;font-family:'my_font';text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.1;stroke-opacity:1"
          x="32.15641"
          y="238.02586"
          id="text6231"><tspan
@@ -525,17 +525,38 @@
 
   <script language="JavaScript" name="script">
     // On actalise les datas a l'ouverture
-    maj_value();
+    maj_value('time');
     // Actualisation automatique tous les 5 secondes
-    setInterval(maj_value, 5000);
+    setInterval(maj_value, 10000);
     
-    // ecoute des groupes pour le bouton
+    // ecoute des groupes pour les boutons
     let btn = ["BTN_T_EAU_H",'BTN_T_EAU_B','BTN_T_EXT','BTN_H_EXT','BTN_HPA','BTN_T_EAU_C','BTN_REDOX','BTN_PH','BTN_ETAT_P_CHAUD','BTN_ETAT_P_FILT','BTN_ETAT_ECL'];
     let clickHandler = [] ;
     let el_btn = [];
     for(let i=0;i<btn.length;i++){
       clickHandler[i] = function () {
         console.log("Petit clic sur "+btn[i]);
+        switch (btn[i]){
+          case 'BTN_T_EAU_H':
+          case 'BTN_T_EAU_B':
+          case 'BTN_T_EXT':
+          case 'BTN_H_EXT':
+          case 'BTN_HPA':
+          case 'BTN_T_EAU_C':
+          case 'BTN_REDOX':
+          case 'BTN_PH':
+            location.replace("stat_temp.html?btn="+btn[i]);
+            break;
+          case 'BTN_ETAT_P_FILT':
+          case 'BTN_ETAT_ECL':
+            location.replace("cdm_btn.html?btn="+btn[i])
+            break;
+          case 'BTN_ETAT_P_CHAUD':
+            location.replace("cdm_btn_chauf.html")
+            break;
+          default :
+            break;
+        }
       }
       el_btn[i] = document.querySelector('#'+btn[i]);
       el_btn[i].addEventListener('click', clickHandler[i]);
