@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<script language="javascript">
+    // Function pour recuperer la variable GET de l'url (emprunté sur http://www.trucsweb.com/tutoriels/javascript/tw303/)
+    function twRequeteVariable(sNom, sUrl) {
+        if (!sUrl) sUrl = window.location.href;
+        sNom = sNom.replace(/[\[\]]/g, "\\$&");
+        let regex = new RegExp("[?&]" + sNom + "(=([^&#]*)|&|#|$)"),
+            sResults = regex.exec(sUrl);
+        if (!sResults) return null;
+        if (!sResults[2]) return '';
+        return decodeURIComponent(sResults[2].replace(/\+/g, " "));
+    }
+
+    // on Charge les datas celon le btn
+    let name_btn = twRequeteVariable("btn");
+    let title = "";
+    if (name_btn == "BTN_ETAT_P_FILT") { title = "Historique de la pompe de filtration" }
+    else if (name_btn == "BTN_ETAT_ECL") { title = "historique De l'éclairage" }
+    else { location.replace("index.html"); }
+</script>
+
+<head>
+    <title>GDMP - Historiques</title>
+    <!-- definition de l'encodage -->
+    <meta charset="utf-8">
+    <!-- Chargement de l'icone -->
+    <link rel="icon" href="./img/icon_32.png" type="image/png">
+    <!-- chargement des fonction JS -->
+    <script type="text/javascript" src="./js/func.js"></script>
+    <!-- Chargement de la feuille de style -->
+    <link href="./style/cdm_btn.css" rel="stylesheet" media="all" type="text/css">
+
+</head>
+
+<body>
+    <div id="content">
+        <img id="home" src="./img/home.svg" style="position:absolute;top: 1vmax;left:1vmax;width: 6vmax;">
+        <div class="box_1" style="position:absolute;top: 1vmax;left:50%;transform: translate(-50%);">
+            <span id="title" class="txt_box_1"></span>
+        </div>
+        
+        <div id="back" class="box_1" style="position:absolute;top: 8vmax;right:2vmax;min-width: 10vmax;">
+            <span class="txt_box_2">Retour config</span>
+        </div>
+        <div id="sup_histo" class="box_1" style="position:absolute;top: 8vmax;left:2vmax;">
+            <span class="txt_box_2">Supprimer les Historiques</span>
+        </div>
+        <div id="histo" class="box_histo" style="position:absolute;top: 15vmax;left:50%;bottom:5%;transform: translate(-50%);min-width: 80vmax;">
+            <span class="txt_box_3"></span>
+        </div>
+        
+        </div>
+    </div>
+</body>
+<script language="JavaScript" name="script">
+    // on affiche le titre de la gestion
+    document.querySelector("#title").innerHTML = title;
+
+    // On Charge les hitoriques
+    maj_histo(name_btn);
+
+    // on ecoute le bouton home
+    click_home = function () {
+        location.replace("index.html");
+    }
+    btn_home = document.querySelector('#home');
+    btn_home.addEventListener('click', click_home);
+    
+    // on ecoute le bouton histo
+    click_back = function () {
+        location.replace("cdm_btn.html?btn="+name_btn);
+    }
+    btn_back = document.querySelector('#back');
+    btn_back.addEventListener('click', click_back);
+
+    // on ecoute le bouton supprim histo
+    click_sup_histo = function () {
+        maj_histo(name_btn,'del');
+    }
+    btn_sup_histo = document.querySelector('#sup_histo');
+    btn_sup_histo.addEventListener('click', click_sup_histo);
+
+</script>
+
+</html>

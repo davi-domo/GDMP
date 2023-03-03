@@ -16,13 +16,13 @@
     // on Charge les datas celon le btn
     let name_btn = twRequeteVariable("btn");
     let title = "";
-    if (name_btn == "BTN_ETAT_P_FILT") { title = "Gestion de la pompe de filtration" }
-    else if (name_btn == "BTN_ETAT_ECL") { title = "Gestion De l'éclairage" }
+    if (name_btn == "BTN_ETAT_P_FILT") { title = "Programmation de la pompe de filtration" }
+    else if (name_btn == "BTN_ETAT_ECL") { title = "Programmation De l'éclairage" }
     else { location.replace("index.html"); }
 </script>
 
 <head>
-    <title>GDMP - Commande</title>
+    <title>GDMP - Programmation</title>
     <!-- definition de l'encodage -->
     <meta charset="utf-8">
     <!-- Chargement de l'icone -->
@@ -41,12 +41,11 @@
             <span id="title" class="txt_box_1"></span>
         </div>
 
-        <div id="histo" class="box_1" style="position:absolute;top: 8vmax;left:2vmax;">
-            <span class="txt_box_1">Historique</span>
+        <div id="back" class="box_1" style="position:absolute;top: 8vmax;right:2vmax;min-width: 10vmax;">
+            <span class="txt_box_2">Retour config</span>
         </div>
-        <div id="mode" class="box_1" style="position:absolute;top: 8vmax;right:2vmax;min-width: 27vmax;">
-            <span class="txt_box_1">MODE : </span>
-            <span id="statut" class="txt_box_1"></span>
+        <div id="valid_config" class="box_1" style="position:absolute;top: 8vmax;left:2vmax;">
+            <span class="txt_box_2">Valider les modifications</span>
         </div>
 
         <div style="position:absolute;top: 16vmax;left:50%;transform: translate(-50%);min-width: 80vmax;">
@@ -55,60 +54,56 @@
             </div>
             <div class="box_2" style="position:absolute;top: 0vmax;left:22vmax;">
                 <span class="txt_box_2">ON : </span>
-                <span id="on_1" class="txt_box_2"></span>
-                <span class="txt_box_2"> H</span>
+                <select id="on_1"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 0vmax;left:42vmax;">
                 <span class="txt_box_2">DURER : </span>
-                <span id="duration_1" class="txt_box_2">120</span>
+                <select id="duration_1"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 0vmax;left:62vmax;">
-                <span id="semaine_1" class="txt_box_2"></span>
+                <select id="semaine_1"></select>
             </div>
             <div id="config_2" class="box_2" style="position:absolute;top: 6vmax;left:2vmax;">
                 Programme : 2
             </div>
             <div class="box_2" style="position:absolute;top: 6vmax;left:22vmax;">
                 <span class="txt_box_2">ON : </span>
-                <span id="on_2" class="txt_box_2"></span>
-                <span class="txt_box_2"> H</span>
+                <select id="on_2"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 6vmax;left:42vmax;">
                 <span class="txt_box_2">DURER : </span>
-                <span id="duration_2" class="txt_box_2"></span>
+                <select id="duration_2"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 6vmax;left:62vmax;">
-                <span id="semaine_2" class="txt_box_2"></span>
+                <select id="semaine_2"></select>
             </div>
             <div id="config_3" class="box_2" style="position:absolute;top: 12vmax;left:2vmax;">
                 Programme : 3
             </div>
             <div class="box_2" style="position:absolute;top: 12vmax;left:22vmax;">
                 <span class="txt_box_2">ON : </span>
-                <span id="on_3" class="txt_box_2"></span>
-                <span class="txt_box_2"> H</span>
+                <select id="on_3"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 12vmax;left:42vmax;">
                 <span class="txt_box_2">DURER : </span>
-                <span id="duration_3" class="txt_box_2"></span>
+                <select id="duration_3"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 12vmax;left:62vmax;">
-                <span id="semaine_3" class="txt_box_2"></span>
+                <select id="semaine_3"></select>
             </div>
             <div id="config_4" class="box_2" style="position:absolute;top: 18vmax;left:2vmax;">
                 Programme : 4
             </div>
             <div class="box_2" style="position:absolute;top: 18vmax;left:22vmax;">
                 <span class="txt_box_2">ON : </span>
-                <span id="on_4" class="txt_box_2"></span>
-                <span class="txt_box_2"> H</span>
+                <select id="on_4"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 18vmax;left:42vmax;">
                 <span class="txt_box_2">DURER : </span>
-                <span id="duration_4" class="txt_box_2"></span>
+                <select id="duration_4"></select>
             </div>
             <div class="box_2" style="position:absolute;top: 18vmax;left:62vmax;">
-                <span id="semaine_4" class="txt_box_2"></span>
+                <select id="semaine_4"></select>
             </div>
         </div>
     </div>
@@ -117,9 +112,11 @@
     // on affiche le titre de la gestion
     document.querySelector("#title").innerHTML = title;
 
-    // On actalise les datas a l'ouverture
-    maj_value('btn', name_btn);
-    maj_value('config', name_btn);
+    // on crée les option des champs select
+    option_txt();
+
+    // On selectionne les option select à l'ouverture
+    maj_config(name_btn);
 
     // on ecoute le bouton home
     click_home = function () {
@@ -128,32 +125,19 @@
     btn_home = document.querySelector('#home');
     btn_home.addEventListener('click', click_home);
 
-    // on ecoute le bouton historique
-    click_histo = function () {
-        location.replace("histo.html?btn=" + name_btn);
+    // on ecoute le bouton valid_config
+    click_valid_config = function () {
+        maj_config(name_btn,true);
     }
-    btn_histo = document.querySelector('#histo');
-    btn_histo.addEventListener('click', click_histo);
+    btn_valid_config = document.querySelector('#valid_config');
+    btn_valid_config.addEventListener('click', click_valid_config);
 
-    // on ecoute le bouton mode
-    click_mode = function () {
-        maj_value('cdm', name_btn);
+    // on ecoute le bouton back
+    click_back = function () {
+        location.replace("cdm_btn.html?btn=" + name_btn);
     }
-    btn_mode = document.querySelector('#mode');
-    btn_mode.addEventListener('click', click_mode);
-
-    // on ecoute les bouton Programme
-    let btn = ["config_1", 'config_2', 'config_3', 'config_4'];
-    let clickHandler = [];
-    let el_btn = [];
-    for (let i = 0; i < btn.length; i++) {
-        clickHandler[i] = function () {
-            console.log("Petit clic sur " + btn[i]);
-            location.replace("config_timer.html?btn=" + name_btn);
-        }
-        el_btn[i] = document.querySelector('#' + btn[i]);
-        el_btn[i].addEventListener('click', clickHandler[i]);
-    }
+    btn_back = document.querySelector('#back');
+    btn_back.addEventListener('click', click_back);
 
 </script>
 

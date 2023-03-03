@@ -1,12 +1,13 @@
 @font-face {
     font-family: my_font;
     src: url(ErasBoldITC.woff);
-  }
+}
+
 html,
 body {
-    
-    font-family: "my_font" ;
-    background-image: url("../img/background.svg");
+
+    font-family: "my_font";
+    background-image: url("../img/background.png");
     background-size: cover;
     background-repeat: no-repeat;
     /* on supprimme les marges html */
@@ -23,7 +24,7 @@ body {
     user-select: none;
 }
 
-#content{
+#content {
     position: absolute;
     top: 0px;
     left: 0px;
@@ -31,28 +32,91 @@ body {
     height: 100%;
 }
 
-.box_1{
-    background: linear-gradient(0deg, rgba(44,128,226,0.4) 0%, rgba(0,121,255,0.6) 100%);
+.box_1 {
+    background: linear-gradient(0deg, rgba(44, 128, 226, 0.4) 0%, rgba(0, 121, 255, 0.6) 100%);
     border-radius: 0.7em;
     padding: .5em;
     min-width: 15vmax;
     font-size: 2.5vmax;
-    color: white;white-space: nowrap;
+    color: white;
+    white-space: nowrap;
     overflow: hidden;
 }
-.txt_box_1{
+
+.txt_box_1 {
     font-size: 3vmax;
 }
 
-.box_2{
-    background: linear-gradient(0deg, rgba(44,128,226,0.4) 0%, rgba(0,121,255,0.6) 100%);
+.box_2 {
+    background: linear-gradient(0deg, rgba(44, 128, 226, 0.4) 0%, rgba(0, 121, 255, 0.6) 100%);
     border-radius: 0.7em;
     padding: .5em;
     min-width: 15vmax;
     font-size: 2vmax;
-    color: white;white-space: nowrap;
+    color: white;
+    white-space: nowrap;
     overflow: hidden;
 }
-.txt_box_2{
-    font-size: 2vmax;
+
+.txt_box_2 {
+    font-size: 1.8vmax;
+}
+
+
+.box_histo {
+    background: linear-gradient(0deg, rgba(44, 128, 226, 0.4) 0%, rgba(0, 121, 255, 0.6) 100%);
+    border-radius: 0.7em;
+    padding: .5em;
+    min-width: 15vmax;
+    font-family: "Lucida Console", Courier, monospace;
+    font-size: 1.5vmax;
+    color: white;
+    white-space: nowrap;
+    overflow: auto;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+/* personalisation de la scrollbar */
+::-webkit-scrollbar {
+    width: 0.6vmax;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 121, 255, 0.5);
+    border-radius: 0.7em;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3241ce;
+}
+
+select {
+    min-width: 6vmax;
+    padding: 0.1em 0.1em 0.1em 0.5em;
+    font-size: 1.6vmax;
+    font-weight: bold;
+    color: white;
+    border: 0.1em solid rgba(0, 121, 255, 0.5);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    overflow: auto;
+    outline: none;
+    background: transparent
+}
+
+select option {
+    background: rgba(0, 121, 255, 0.5);
+    color: #fff;
+}
+
+select:focus>option:checked {
+    background: rgba(5, 209, 39, 0.3);
 }
