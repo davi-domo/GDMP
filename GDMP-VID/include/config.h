@@ -2,8 +2,8 @@
 
 // detail du projet
 
-const char *ver = "1.03.dev";
-const char *modif = "01/03/23";
+const char *ver = "1.04.dev";
+const char *modif = "21/03/23";
 
 // configuation du wifi
 const char *ssid = "VOTRE_SSID";
