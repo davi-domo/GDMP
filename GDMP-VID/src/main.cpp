@@ -21,7 +21,15 @@ Fonction explode de Vikas Kandari https://arduino.stackexchange.com/questions/10
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include "SPIFFS.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS 4
 
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
 // chargement du fichier de confuration
 #include <config.h>
 
@@ -41,6 +49,7 @@ void setup()
 {
   // configuration du port serie pour le debug
   Serial.begin(115200);
+
   // mode debug présentation
   Serial.println(F("Projet GDMP Gestion De Ma Piscine"));
   Serial.print(F("Version : "));
@@ -91,6 +100,23 @@ void setup()
   // On verifie la presence des fichiers d'historique
   check_histo();
   /*************************************************************/
+
+  // On configure la precision des sonde ds18b20
+  sensors.setResolution(ad_T_EAU_H, 12);
+  Serial.print("T_EAU_H Resolution: ");
+  Serial.println(sensors.getResolution(ad_T_EAU_H), DEC);
+  sensors.setResolution(ad_T_EAU_B, 12);
+  Serial.print("T_EAU_B Resolution: ");
+  Serial.println(sensors.getResolution(ad_T_EAU_B), DEC);
+  sensors.setResolution(ad_T_EAU_C, 12);
+  Serial.print("T_EAU_C Resolution: ");
+  Serial.println(sensors.getResolution(ad_T_EAU_C), DEC);
+  /*************************************************************/
+
+  delay(1000);
+
+  xTaskCreate(check_ds18b20, "vTask1", 10000, NULL, 1, NULL);
+
   // on affiche la page par défaut sur l'ip
   server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request)
             {
@@ -104,44 +130,44 @@ void setup()
     String reponse_json = "";
     String  json_index = "{";
             json_index += "\"T_EXT\":\"" + String(random(-50, 400) / 10.0, 1) + "\",";
-            if (mode_relay[num_relay("BTN_ETAT_ECL")] == 2)
+            if (mode_relay[num_index("BTN_ETAT_ECL")] == 2)
             {
-              json_index += "\"ETAT_ECL\":\"" + mode_relay_txt[mode_relay[num_relay("BTN_ETAT_ECL")]] + " " + etat_relay_txt[etat_relay[num_relay("BTN_ETAT_ECL")]] + "\",";
+              json_index += "\"ETAT_ECL\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_ECL")]] + " " + etat_relay_txt[etat_relay[num_index("BTN_ETAT_ECL")]] + "\",";
             }
             else
             {
-              json_index += "\"ETAT_ECL\":\"" + mode_relay_txt[mode_relay[num_relay("BTN_ETAT_ECL")]] + "\",";
+              json_index += "\"ETAT_ECL\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_ECL")]] + "\",";
             }
-            json_index += "\"T_EAU_H\":\"" + String(random(-50, 400) / 10.0, 1) + "\",";
+            json_index += "\"T_EAU_H\":\"" + temp_eau[0] + "\",";
             json_index += "\"H_EXT\":\"" + String(random(200, 980) / 10.0, 1) + "\",";
             json_index += "\"HPA\":\"" + String(random(950, 1025)) + "\",";
             json_index += "\"PH\":\"" + String(random(40, 140) / 10.0, 1) + "\",";
             json_index += "\"REDOX\":\"" + String(random(250, 780)) + "\",";
-            json_index += "\"T_EAU_C\":\"" + String(random(-50, 400) / 10.0, 1) + "\",";
-            if (mode_relay[num_relay("BTN_ETAT_P_CHAUD")] == 2)
+            json_index += "\"T_EAU_C\":\"" + temp_eau[2] + "\",";
+            if (mode_relay[num_index("BTN_ETAT_P_CHAUD")] == 2)
             {
-              json_index += "\"ETAT_P_CHAUD\":\"" + mode_relay_txt[mode_relay[num_relay("BTN_ETAT_P_CHAUD")]] + " " + etat_relay_txt[etat_relay[num_relay("BTN_ETAT_P_CHAUD")]] + "\",";
+              json_index += "\"ETAT_P_CHAUD\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_P_CHAUD")]] + " " + etat_relay_txt[etat_relay[num_index("BTN_ETAT_P_CHAUD")]] + "\",";
             }
             else
             {
-              json_index += "\"ETAT_P_CHAUD\":\"" + mode_relay_txt[mode_relay[num_relay("BTN_ETAT_P_CHAUD")]] + "\",";
+              json_index += "\"ETAT_P_CHAUD\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_P_CHAUD")]] + "\",";
             }
 
-            if (mode_relay[num_relay("BTN_ETAT_P_FILT")] == 2)
+            if (mode_relay[num_index("BTN_ETAT_P_FILT")] == 2)
             {
-              json_index += "\"ETAT_P_FILT\":\"" + mode_relay_txt[mode_relay[num_relay("BTN_ETAT_P_FILT")]] + " " + etat_relay_txt[etat_relay[num_relay("BTN_ETAT_P_FILT")]] + "\",";
+              json_index += "\"ETAT_P_FILT\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_P_FILT")]] + " " + etat_relay_txt[etat_relay[num_index("BTN_ETAT_P_FILT")]] + "\",";
             }
             else
             {
-              json_index += "\"ETAT_P_FILT\":\"" + mode_relay_txt[mode_relay[num_relay("BTN_ETAT_P_FILT")]] + "\",";
+              json_index += "\"ETAT_P_FILT\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_P_FILT")]] + "\",";
             }
-            json_index += "\"T_EAU_B\":\"" + String(random(-50, 400) / 10.0, 1) + "\"";
+            json_index += "\"T_EAU_B\":\"" + temp_eau[1] + "\"";
             json_index += "}";
     //on stock le nombre de parametre  
     uint8_t nb_params = request->params();
     //on verifie la presence de parametre
     if(nb_params){  
-      // préparation des variables// variable de reponse web
+      // préparation des variables
       String param_name[nb_params];
       String param_value[nb_params];
       Serial.println(F("Présence de parametre GET"));
@@ -165,7 +191,7 @@ void setup()
         dtime.setTimestamp(timestamp);
         Serial.printf("Nous somme le %d/%d/%d Jour de la semaine : %d et il est %d:%d\n", dtime.day, dtime.month, dtime.year,dtime.weekday, dtime.hour, dtime.minute);
         // on force la reprise des programmation
-        check_time=true;
+        check_cdm_auto=true;
         // on prepare la reponse json
         reponse_json = json_index;
         
@@ -173,7 +199,7 @@ void setup()
       
       // si le parametre cdm est present
       if(param_name[0] == "cdm" && param_value[0] !=""){
-        int index_cdm = num_relay(param_value[0]);
+        int index_cdm = num_index(param_value[0]);
         // on change l'état du mode
         toggle_mode_relay(index_cdm);
         add_histo(cdm_relay[index_cdm], "Passage en mode : " + mode_relay_txt[mode_relay[index_cdm]]);
@@ -188,7 +214,7 @@ void setup()
 
       }// si le parametre btn est present
       if(param_name[0] == "btn" && param_value[0] !=""){
-        int index_btn = num_relay(param_value[0]);
+        int index_btn = num_index(param_value[0]);
         Serial.print(F("Chargement de la page cdm_btn : "));
         Serial.println(param_value[0]);
         Serial.println(F("Mise a jour des données"));
@@ -233,7 +259,7 @@ void setup()
                   // création du fichier
                       String file_histo = "/histo/" + name_btn + ".txt"; // chemin vers le fichier corespondant
                       File create_histo = SPIFFS.open(file_histo, FILE_WRITE);
-                      String data = date_txt() + " -> Suppression des historiques\n";
+                      String data = date_format() + " -> Suppression des historiques\n";
                       create_histo.print(data); 
                       create_histo.close(); // on ferme le fichier
                       Serial.print(F("Suppression du fichier d'historique : "));
@@ -298,14 +324,71 @@ void setup()
                     // on vide les fin de programmation et on force la programmation
                     for (int i = 0; i < 4; i++)
                     {
-                      time_duration_end[num_relay(name_btn)][i] = 0;
+                      time_duration_end[num_index(name_btn)][i] = 0;
                     }
-                    check_time=true;
+                    check_cdm_auto=true;
                   }
                 }
     }
     // on envoi le fichier a jour  
     request->send(SPIFFS, "/config/" + name_btn + ".json"); });
+
+  // ecoute des parametre de la dossier stat pour l'affichage des courbe
+  server.on("/stat/", HTTP_ANY, [](AsyncWebServerRequest *request)
+            {
+    // on stock le nombre de parametre
+    uint8_t nb_params = request->params();
+    uint8_t index_sonde;
+    String reponse_json;
+    String value_temp;
+    // on verifie la presence de parametre
+    if (nb_params)
+    {
+      // préparation des variable
+      String param_name[nb_params];
+      String param_value[nb_params];
+      Serial.println(F("Présence de parametre GET"));
+      // extraction des données
+      for (int i = 0; i < nb_params; i++)
+      {
+        AsyncWebParameter *p = request->getParam(i);
+        param_name[i] = p->name();
+        param_value[i] = p->value();
+        Serial.print(param_name[i]);
+        Serial.print(F(" : "));
+        Serial.println(param_value[i]);
+      }
+
+      // si le parametre save_btn est present
+      if (param_name[0] == "sonde" && param_value[0] != "")
+      {
+        if(param_value[1] == "DS18B20"){
+        index_sonde = num_index(param_value[0],2);
+        reponse_json = "[\n";
+        value_temp = (temp_eau_day[index_sonde][0] == NULL) ? "null" : temp_eau_day[index_sonde][0];
+        reponse_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_temp;
+                for (int j = 1; j <= dtime.hour; j++) // on incremente toute les heures
+                {
+                    value_temp = (temp_eau_day[index_sonde][j] == NULL) ? "null" : temp_eau_day[index_sonde][j];
+                    reponse_json += "," + value_temp;
+                }
+                reponse_json += "]}\n";
+                reponse_json += "]";
+        // presense de action = del on supprime les stats
+                if (param_value[2] != NULL){
+                  String file_del = "/stat/" + param_value[0] + ".json";
+                  if( param_value[2] == "del" && SPIFFS.exists(file_del)) {
+                    SPIFFS.remove(file_del);
+                    Serial.print(F("Suppression du fichier de statistique de la sonde : "));
+                    Serial.println(param_value[0]);
+                  }
+                }
+        }
+        
+      }
+    }
+    // on envoi le fichier a jour
+    request->send(200, "application/json", reponse_json); });
 
   // On renvoie toute les requetes web vers le SPIFFS
   server.serveStatic("/", SPIFFS, "/");
@@ -322,7 +405,10 @@ void loop()
   maj_time();
 
   // verification des programme auto
-  check_cdm_auto();
+  cdm_auto();
+
+  // mise a jour des statistique
+  maj_stat();
 
   // mise a jour de l'état des relais
   state_relay();
