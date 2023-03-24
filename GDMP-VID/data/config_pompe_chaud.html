@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<script language="javascript">
+    // Function pour recuperer la variable GET de l'url (emprunté sur http://www.trucsweb.com/tutoriels/javascript/tw303/)
+    function twRequeteVariable(sNom, sUrl) {
+        if (!sUrl) sUrl = window.location.href;
+        sNom = sNom.replace(/[\[\]]/g, "\\$&");
+        let regex = new RegExp("[?&]" + sNom + "(=([^&#]*)|&|#|$)"),
+            sResults = regex.exec(sUrl);
+        if (!sResults) return null;
+        if (!sResults[2]) return '';
+        return decodeURIComponent(sResults[2].replace(/\+/g, " "));
+    }
+</script>
+
+<head>
+    <title>GDMP - Commande</title>
+    <!-- definition de l'encodage -->
+    <meta charset="utf-8">
+    <!-- Chargement de l'icone -->
+    <link rel="icon" href="./img/icon_32.png" type="image/png">
+    <!-- chargement des fonction JS -->
+    <script type="text/javascript" src="./js/func.js"></script>
+    <!-- Chargement de la feuille de style -->
+    <link href="./style/cdm_btn.css" rel="stylesheet" media="all" type="text/css">
+
+</head>
+
+<body>
+    <div id="content">
+        <img id="home" src="./img/home.svg" style="position:absolute;top: 1vmax;left:1vmax;width: 6vmax;">
+        <div class="box_1" style="position:absolute;top: 1vmax;left:50%;transform: translate(-50%);">
+            <span id="title" class="txt_box_1">Gestion de la pompe d'eau chaude</span>
+        </div>
+
+
+        <div id="valid_config" class="box_1" style="position:absolute;top: 8vmax;left:2vmax;">
+            <span class="txt_box_2">Valider les modifications</span>
+        </div>
+        <div id="back" class="box_1" style="position:absolute;top: 8vmax;right:2vmax;min-width: 10vmax;">
+            <span class="txt_box_2">Retour config</span>
+        </div>
+        <div style="position:absolute;top: 16vmax;left:50%;transform: translate(-50%);min-width: 80vmax;">
+            <div id="config" class="box_2" style="position:absolute;top: 0vmax;left:2vmax;">
+                CONFIG
+            </div>
+        
+            <div class="box_2" style="position:absolute;top: 0vmax;left:22vmax;">
+                <span class="txt_box_2">DELTA : </span>
+                <select id="delta">
+                    <option value="1">1 C°</option>
+                    <option value="2">2 C°</option>
+                    <option value="3">3 C°</option>
+                    <option value="4">4 C°</option>
+                    <option value="5">5 C°</option>
+                    <option value="6">6 C°</option>
+                    <option value="7">7 C°</option>
+                    <option value="8">8 C°</option>
+                    <option value="9">9 C°</option>
+                    <option value="10">10 C°</option>
+                </select>
+            </div>
+            <div class="box_2" style="position:absolute;top: 0vmax;left:42vmax;">
+                <span class="txt_box_2">LIMITE : </span>
+                <select id="max_temp">
+                    <option value="20">20 C°</option>
+                    <option value="21">21 C°</option>
+                    <option value="22">22 C°</option>
+                    <option value="23">23 C°</option>
+                    <option value="24">24 C°</option>
+                    <option value="25">25 C°</option>
+                    <option value="26">26 C°</option>
+                    <option value="27">27 C°</option>
+                    <option value="28">28 C°</option>
+                    <option value="29">29 C°</option>
+                    <option value="30">30 C°</option>
+                    <option value="31">31 C°</option>
+                    <option value="32">32 C°</option>
+                    <option value="33">33 C°</option>
+                    <option value="34">34 C°</option>
+                    <option value="35">35 C°</option>
+                </select>
+            </div>
+    </div>
+    </div>
+</body>
+<script language="JavaScript" name="script">
+
+
+    // On actalise les datas a l'ouverture
+    maj_config('BTN_ETAT_P_CHAUD');
+
+    // on ecoute le bouton home
+    click_home = function () {
+        location.replace("index.html");
+    }
+    btn_home = document.querySelector('#home');
+    btn_home.addEventListener('click', click_home);
+
+    // on ecoute le bouton valid_config
+    click_valid_config = function () {
+        maj_config("BTN_ETAT_P_CHAUD",true);
+        location.replace("cdm_btn_chauf.html");
+    }
+    btn_valid_config = document.querySelector('#valid_config');
+    btn_valid_config.addEventListener('click', click_valid_config);
+
+    // on ecoute le bouton back
+    click_back = function () {
+        location.replace("cdm_btn_chauf.html");
+    }
+    btn_back = document.querySelector('#back');
+    btn_back.addEventListener('click', click_back);
+
+</script>
+
+</html>

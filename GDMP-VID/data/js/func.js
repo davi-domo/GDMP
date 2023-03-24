@@ -25,7 +25,7 @@ function maj_value(type, name_btn = 'null') {
 			}
 		}
 	}
-	
+
 	if (type === 'time') {// si time est à true on envoie la timestamp à la carte
 		let date = new Date();
 		let timestamp = Math.floor((date.getTime() - (date.getTimezoneOffset() * 60000)) / 1000);
@@ -77,7 +77,7 @@ function maj_histo(name_btn, cdm = 'null') {
 		if (ajaxRequest.readyState == 4) {
 			//si la requete est complete
 			if (ajaxRequest.status == 200) {// on affiche les historique
-				document.querySelector('#histo').innerHTML = ajaxRequest.responseText.replace(/\n/g, '<br />\n');
+				document.querySelector('#histo').innerHTML = ajaxRequest.responseText.replace(/\n/g, '<br />\n').replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
 			}
 		}
 	}
@@ -85,7 +85,7 @@ function maj_histo(name_btn, cdm = 'null') {
 		url += '?btn=' + name_btn;
 
 	}
-	else {// sinon on affiche seullement
+	else {// sinon on affiche seulement
 		url += name_btn + ".txt";
 	}
 	ajaxRequest.open('GET', url);
@@ -157,24 +157,35 @@ function maj_config(name_btn, save = false) {
 			}
 		}
 	}
+	
 	if (save == true) { // si save est present on envoie les valeur des option
-		// on extrait les donnée des select
-		let get_on = "on";
-		let get_duration = "duration";
-		let get_semaine = "semaine";
-		let get ="";
-		for (let i = 1; i <= 4; i++) {
-			let id_on = get_on.concat('_', i)
-			let value_on = document.querySelector('#' + id_on).value;
-			get += "&" + id_on + "=" + value_on;
+		let get;
+		if (name_btn == "BTN_ETAT_P_CHAUD")// si on est sur la gestion de pompe 
+		{
+			let delta = document.querySelector('#delta').value;
+			let max_temp = document.querySelector('#max_temp').value;
+			get = "&max_temp=" + max_temp + "&delta=" + delta;
+		}
+		else { // pour les autre programmation
 
-			let id_duration = get_duration.concat('_', i)
-			let value_duration = document.querySelector('#' + id_duration).value;
-			get += "&" + id_duration + "=" + value_duration;
+			// on extrait les donnée des select
+			let get_on = "on";
+			let get_duration = "duration";
+			let get_semaine = "semaine";
+			get = "";
+			for (let i = 1; i <= 4; i++) {
+				let id_on = get_on.concat('_', i)
+				let value_on = document.querySelector('#' + id_on).value;
+				get += "&" + id_on + "=" + value_on;
 
-			let id_semaine = get_semaine.concat('_', i)
-			let value_semaine = document.querySelector('#' + id_semaine).value;
-			get += "&" + id_semaine + "=" + value_semaine;
+				let id_duration = get_duration.concat('_', i)
+				let value_duration = document.querySelector('#' + id_duration).value;
+				get += "&" + id_duration + "=" + value_duration;
+
+				let id_semaine = get_semaine.concat('_', i)
+				let value_semaine = document.querySelector('#' + id_semaine).value;
+				get += "&" + id_semaine + "=" + value_semaine;
+			}
 		}
 		url = './config/?save_btn=' + name_btn + get;
 	}
@@ -182,3 +193,5 @@ function maj_config(name_btn, save = false) {
 	ajaxRequest.open('GET', url);
 	ajaxRequest.send();
 }
+
+

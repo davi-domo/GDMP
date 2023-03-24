@@ -128,6 +128,7 @@
     // on ecoute le bouton valid_config
     click_valid_config = function () {
         maj_config(name_btn,true);
+        location.replace("cdm_btn.html?btn=" + name_btn);
     }
     btn_valid_config = document.querySelector('#valid_config');
     btn_valid_config.addEventListener('click', click_valid_config);

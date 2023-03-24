@@ -120,3 +120,16 @@ select option {
 select:focus>option:checked {
     background: rgba(5, 209, 39, 0.3);
 }
+
+.box_stat {
+    background: none;
+    border-radius: 0.7em;
+    padding: .5em;
+    min-width: 15vmax;
+    max-width: 15vmax;
+}
+canvas{
+    background: none;
+    height: 100%;
+    width: 100%;
+  }

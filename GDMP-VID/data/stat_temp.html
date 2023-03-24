@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<script language="javascript">
+    // Function pour recuperer la variable GET de l'url (emprunté sur http://www.trucsweb.com/tutoriels/javascript/tw303/)
+    function twRequeteVariable(sNom, sUrl) {
+        if (!sUrl) sUrl = window.location.href;
+        sNom = sNom.replace(/[\[\]]/g, "\\$&");
+        let regex = new RegExp("[?&]" + sNom + "(=([^&#]*)|&|#|$)"),
+            sResults = regex.exec(sUrl);
+        if (!sResults) return null;
+        if (!sResults[2]) return '';
+        return decodeURIComponent(sResults[2].replace(/\+/g, " "));
+    }
+
+    // on Charge les datas celon le btn
+    let name_sonde = twRequeteVariable("btn").substring(4);
+    let type_sonde = twRequeteVariable("type");
+    let title = "";
+    switch (name_sonde) {
+        case 'T_EAU_H':
+            title = "Statistique de température eau de surface";
+            break;
+        case 'T_EAU_B':
+            title = "Statistique de température eau profonde";
+            break;
+        case 'T_EXT':
+            title = "Statistique de température exterieur";
+            break;
+        case 'H_EXT':
+            title = "Statistique d'hygrometries exterieur";
+            break;
+        case 'HPA':
+            title = "Statistique de présion atmosphérique";
+            break;
+        case 'T_EAU_C':
+            title = "Statistique de température eau chaude";
+            break;
+        case 'REDOX':
+            title = "Statistique de snde redox";
+            break;
+        case 'PH':
+            title = "Statistique de sonde PH";
+            break;
+            break;
+
+        default:
+            location.replace("index.html");
+            break;
+    }
+</script>
+
+<head>
+    <title>GDMP - Statistique</title>
+    <!-- definition de l'encodage -->
+    <meta charset="utf-8">
+    <!-- Chargement de l'icone -->
+    <link rel="icon" href="./img/icon_32.png" type="image/png">
+    <!-- chargement des fonction JS -->
+    <script type="text/javascript" src="./js/func.js"></script>
+    <!-- Chargement de la feuille de style -->
+    <link href="./style/cdm_btn.css" rel="stylesheet" media="all" type="text/css">
+
+</head>
+
+<body>
+    <div id="content">
+        <img id="home" src="./img/home.svg" style="position:absolute;top: 1vmax;left:1vmax;width: 6vmax;">
+        <div class="box_1" style="position:absolute;top: 1vmax;left:50%;transform: translate(-50%);">
+            <span id="title" class="txt_box_1"></span>
+        </div>
+
+        <div class="box_2" style="position:absolute;top: 8vmax;right:2vmax;;min-width: 10vmax;">
+
+            <span id="dec_stat" class="txt_box_1">&#9660;</span>
+            <select class="txt_box_1" id="select_stat">
+                <option value="0">Chargement</option>
+            </select>
+            <span id="inc_stat" class="txt_box_1"> &#9650;</span>
+        </div>
+        <div id="sup_stat" class="box_2" style="position:absolute;top: 8vmax;left:2vmax;">
+            <span class="txt_box_2">Supprimer les Statistiques</span>
+        </div>
+        <div id="stat" class="box_stat"
+            style="position:absolute;top: 14vmax;left:50%;bottom:5%;transform: translate(-50%);min-width: 80vmax;">
+            <canvas width="800px" height="400px"></canvas>
+            <draw-canvas-data-set></draw-canvas-data-set>
+        </div>
+
+    </div>
+    </div>
+</body>
+<script type="text/javascript" src="./js/stat.js"></script>
+<script language="JavaScript" name="script">
+
+    // on affiche le titre de la gestion
+    document.querySelector("#title").innerHTML = title;
+    // On Charge les stats du jours
+    maj_stat(name_sonde,type_sonde);
+    // On Charge les stats du spiffs
+    maj_stat(name_sonde,type_sonde,'all');
+
+    // on ecoute le bouton home
+    click_home = function () { location.replace("index.html") }
+    btn_home = document.querySelector('#home');
+    btn_home.addEventListener('click', click_home);
+
+    // on ecoute le bouton supprim statistique
+    click_sup_stat = function () {
+        let text = "Souhaitez vous vraiment supprimer\nles statistique !!!";
+        if (confirm(text) == true) {
+            maj_stat(name_sonde, type_sonde,'del');
+            location.reload();
+        }
+    }
+    btn_sup_histo = document.querySelector('#sup_stat');
+    btn_sup_histo.addEventListener('click', click_sup_stat);
+
+    // on ecoute select_stat
+    select_stat_change = function () { go_graph(document.querySelector('#select_stat').value) }
+    select_stat = document.querySelector('#select_stat');
+    select_stat.addEventListener('change', select_stat_change);
+
+    // on ecoute le bouton decrement de stat
+    click_dec_stat = function () { select(0) }
+    btn_dec_stat = document.querySelector('#dec_stat');
+    btn_dec_stat.addEventListener('click', click_dec_stat);
+
+    // on ecoute le bouton increment de stat
+    click_inc_stat = function () { select(1) }
+    btn_inc_stat = document.querySelector('#inc_stat');
+    btn_inc_stat.addEventListener('click', click_inc_stat);
+
+</script>
+
+</html>

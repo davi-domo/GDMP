@@ -539,13 +539,16 @@
         switch (btn[i]){
           case 'BTN_T_EAU_H':
           case 'BTN_T_EAU_B':
+          case 'BTN_T_EAU_C':
+            location.replace("stat_temp.html?btn="+btn[i]+"&type=DS18B20");
+            break;
           case 'BTN_T_EXT':
           case 'BTN_H_EXT':
           case 'BTN_HPA':
-          case 'BTN_T_EAU_C':
+            location.replace("stat_temp.html?btn="+btn[i]+"&type=BMP280");
+            break;
           case 'BTN_REDOX':
           case 'BTN_PH':
-            location.replace("stat_temp.html?btn="+btn[i]);
             break;
           case 'BTN_ETAT_P_FILT':
           case 'BTN_ETAT_ECL':
