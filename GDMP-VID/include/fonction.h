@@ -1,5 +1,4 @@
-// bibliotheque de convertion de timestamp
-#include <DTime.h>
+
 
 // déclaration de la class dtime
 DTime dtime;          // dtime -> gestion de la timestamp de la carte
@@ -42,9 +41,20 @@ DeviceAddress ad_T_EAU_C = {0x28, 0xC4, 0xA7, 0x81, 0xE3, 0xB2, 0x3C, 0xC4};
 String name_temp[3] = {"T_EAU_H", "T_EAU_B", "T_EAU_C"}; // nom de l'id de la page html
 String temp_eau[3];                                      // index 0 = T_EAU_H, 1= T_EAU_B, 2 = T_EAU_C
 // tableau 2 dimention [index sonde][donnée]
-String temp_eau_day[3][24]; // stockage de la temperature heure/heure
-int last_hour = 3;          // stockage de l'heure du derniere enregistrement
-bool check_stat = false;    // Autorisation pour enregistrer les statistiques
+String ds18b20_day[3][24]; // stockage de la temperature heure/heure
+int last_hour = 0;         // stockage de l'heure du derniere enregistrement
+bool check_stat = false;   // Autorisation pour enregistrer les statistiques
+
+String val_bme280[3]; // index 0 = temperature, 1= humidité, 2 = pression
+String name_bme280[3] = {"T_EXT", "H_EXT", "HPA"};
+String bme280_day[3][24]; // stockage de la temperature heure/heure
+
+// sonde ph et redox
+String name_ads1115[3] = {"PH", "REDOX"};
+String val_ads1115[3];
+String ads1115_day[3][24]; // stockage de la valeur par heure
+float cal_ph = 2612;       // calibrage de la sonde tension de reference pour un ph neutre 7
+int cal_redox = 863;       // calibrage de la sonde tension de reference
 
 // fonction d'ajout du 0 sur la date si inferieur à 10
 String decimate(byte b)
@@ -146,6 +156,26 @@ int num_index(String txt, int type = 1)
         for (int i = 0; i < name_temp->length(); i++)
         {
             if (name_temp[i] == txt)
+            {
+                result = i;
+                break;
+            }
+        }
+        break;
+    case 3: // si on recherche l'index pour les sonde BME280
+        for (int i = 0; i < name_bme280->length(); i++)
+        {
+            if (name_bme280[i] == txt)
+            {
+                result = i;
+                break;
+            }
+        }
+        break;
+    case 4: // si on recherche l'index pour les sondes sur ads1180
+        for (int i = 0; i < name_ads1115->length(); i++)
+        {
+            if (name_ads1115[i] == txt)
             {
                 result = i;
                 break;
@@ -557,20 +587,20 @@ void cdm_auto()
                     if ((moy_temp_eau + prog_delta) <= temp_eau[2].toFloat() && etat_relay[3] == 0)
                     {
                         etat_relay[3] = 1;
-                        add_histo(cdm_relay[3], "Activation de la pompe\n\t\t\ttemperature eau moyenne : " + String(moy_temp_eau,1) + "\n\t\t\ttemperature eau chaude  : " + temp_eau[2]);
+                        add_histo(cdm_relay[3], "Activation de la pompe\n\t\t\ttemperature eau moyenne : " + String(moy_temp_eau, 1) + "\n\t\t\ttemperature eau chaude  : " + temp_eau[2]);
                         Serial.print(F("\nActivation de la pompe temperature eau moyenne : "));
-                        Serial.print(String(moy_temp_eau,1));
+                        Serial.print(String(moy_temp_eau, 1));
                         Serial.print(F(" temperature eau chaude : "));
                         Serial.println(temp_eau[2]);
                     }
-                    else if((moy_temp_eau + prog_delta) > temp_eau[2].toFloat() && etat_relay[3] == 1)
+                    else if ((moy_temp_eau + prog_delta) > temp_eau[2].toFloat() && etat_relay[3] == 1)
                     {
-                            etat_relay[3] = 0;
-                            add_histo(cdm_relay[3], "Arret de la pompe\n\t\t\ttemperature eau moyenne : " + String(moy_temp_eau,1) + "\n\t\t\ttemperature eau chaude  : " + temp_eau[2]);
-                            Serial.print(F("\nArret de la pompe temperature eau moyenne : "));
-                            Serial.print(String(moy_temp_eau,1));
-                            Serial.print(F(" temperature eau chaude : "));
-                            Serial.println(temp_eau[2]);
+                        etat_relay[3] = 0;
+                        add_histo(cdm_relay[3], "Arret de la pompe\n\t\t\ttemperature eau moyenne : " + String(moy_temp_eau, 1) + "\n\t\t\ttemperature eau chaude  : " + temp_eau[2]);
+                        Serial.print(F("\nArret de la pompe temperature eau moyenne : "));
+                        Serial.print(String(moy_temp_eau, 1));
+                        Serial.print(F(" temperature eau chaude : "));
+                        Serial.println(temp_eau[2]);
                     }
                 }
             }
@@ -578,9 +608,9 @@ void cdm_auto()
             {
                 etat_relay[3] = 0; // temperature au dessus de la limite on coupe
 
-                add_histo(cdm_relay[3], "Limite TEMPERATURE HAUTE atteinte\n\t\t\ttemperature eau moyenne : " + String(moy_temp_eau,1) + "\n\t\t\ttemperature eau chaude  : " + temp_eau[2]);
+                add_histo(cdm_relay[3], "Limite TEMPERATURE HAUTE atteinte\n\t\t\ttemperature eau moyenne : " + String(moy_temp_eau, 1) + "\n\t\t\ttemperature eau chaude  : " + temp_eau[2]);
                 Serial.print(F("\nLimite HAUTE atteint de la pompe temperature eau moyenne : "));
-                Serial.print(String(moy_temp_eau,1));
+                Serial.print(String(moy_temp_eau, 1));
                 Serial.print(F(" temperature eau chaude : "));
                 Serial.println(temp_eau[2]);
             }
@@ -611,95 +641,123 @@ void check_ds18b20(void *pvParameters)
                 Serial.println(temp_eau[i]);
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(20500)); // prend la temp toute 20,5 secondes
+        Serial.print("Free RAM : ");
+        Serial.println(String((long)ESP.getFreeHeap()) + " bytes");
+        vTaskDelay(pdMS_TO_TICKS(30500)); // prend la temp toute 30,5 secondes
     }
 }
 
 // Fonction d'enregistrement de fichier Json des stat sonde
-void save_stat()
+void save_stat(String sonde)
 {
-    String file_stat;
-    String file_old_stat;
     String data_json;
-    String value_temp;
+    String value_day_json;
+    String value_capteur[3][24]; // stockage data capteur
+    String name_file[3];         // stockage nom des capteurs
+    uint8_t nb_sonde = 0;
     dtime.setTimestamp(timestamp);
-
-    // sonde de temperature d'eau
-    for (int i = 0; i < 3; i++)
+    if (sonde == "ds18b20")
     {
-        // on crée le chemin d'acces
-        file_stat = "/stat/" + name_temp[i] + ".json";
-        file_old_stat = "/stat/old_" + name_temp[i] + ".json";
-        if (SPIFFS.exists(file_stat)) // si le fichier n'exite pas on le crée
+        memmove(value_capteur, ds18b20_day, sizeof(ds18b20_day)); // on copie  les datas dans une variable dédié a la fonction
+        memmove(name_file, name_temp, sizeof(name_temp));         // on copie  les datas dans une variable dédié a la fonction
+        nb_sonde = 3;
+    }
+    else if (sonde == "bme280")
+    {
+        memmove(value_capteur, bme280_day, sizeof(bme280_day)); // on copie  les datas dans une variable dédié a la fonction
+        memmove(name_file, name_bme280, sizeof(name_bme280));   // on copie  les datas dans une variable dédié a la fonction
+        nb_sonde = 3;
+    }
+    else if (sonde == "ads1115")
+    {
+        memmove(value_capteur, ads1115_day, sizeof(ads1115_day)); // on copie  les datas dans une variable dédié a la fonction
+        memmove(name_file, name_ads1115, sizeof(name_ads1115));   // on copie  les datas dans une variable dédié a la fonction
+        nb_sonde = 2;
+    }
+    else
+    {
+        return;
+    }
+    // sonde de temperature d'eau
+    for (int i = 0; i < nb_sonde; i++)
+    {
+        if (name_file[i] != "") // si un nom de fichier existe
         {
-            File add_stat = SPIFFS.open(file_stat, FILE_READ);
-            File old_stat = SPIFFS.open(file_old_stat, FILE_WRITE); // fichier provisoire pour inserer la nouvelle donnée en premiere ligne
-            if (add_stat && old_stat)                               // on verifie que les fichier est bien ouvert
+            // on crée le chemin d'acces
+            String file_stat = "/stat/" + name_file[i] + ".json";
+            String file_old_stat = "/stat/old_" + name_file[i] + ".json";
+            if (SPIFFS.exists(file_stat)) // si le fichier existe on le met a jour mais par la premiere ligne
             {
-
-                int ligne = 0;
-                while (add_stat.available())
+                File add_stat = SPIFFS.open(file_stat, FILE_READ);
+                File old_stat = SPIFFS.open(file_old_stat, FILE_WRITE); // fichier provisoire pour inserer la nouvelle donnée en premiere ligne
+                if (add_stat && old_stat)                               // on verifie que les fichier est bien ouvert
                 {
-                    if (ligne <= 1)
-                    {
-                        add_stat.read(); // on va lire le fichier en supprimant la premiere ligne "[\n"
-                    }
-                    else
-                    {
-                        old_stat.print(add_stat.readString());
-                    }
-                    ligne++;
-                }
-                old_stat.close();
-                add_stat.close();
-                File add_stat = SPIFFS.open(file_stat, FILE_WRITE); // on ouvre le fichier en ecriture
-                File old_stat = SPIFFS.open(file_old_stat, FILE_READ);
-                if (add_stat && old_stat) // on verifie que les fichier est bien ouvert
-                {
-                    value_temp = (temp_eau_day[i][0] == NULL) ? "null" : temp_eau_day[i][0];
-                    data_json = "[\n"; // ouverture d'un array de donnée
-                    data_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_temp;
-                    for (int j = 1; j < 24; j++) // on incremente toute les heures
-                    {
-                        value_temp = (temp_eau_day[i][j] == NULL) ? "null" : temp_eau_day[i][j];
-                        data_json += "," + value_temp;
-                    }
-                    data_json += "]},\n";
-                    add_stat.print(data_json);
-                    while (old_stat.available()) // on va lire le fichier en supprimant la premiere ligne "[\n"
-                    {
 
-                        add_stat.print(old_stat.readString());
+                    int ligne = 0;
+                    while (add_stat.available())
+                    {
+                        if (ligne <= 1)
+                        {
+                            add_stat.read(); // on va lire le fichier en supprimant la premiere ligne "[\n"
+                        }
+                        else
+                        {
+                            old_stat.print(add_stat.readString());
+                        }
+                        ligne++;
                     }
                     old_stat.close();
                     add_stat.close();
-                    SPIFFS.remove(file_old_stat);
-                }
-                Serial.print(F("Mise a jour du capteur du fichier de statistique du capteur : "));
-                Serial.println(name_temp[i]);
-            }
-        }
-        else // si le fichier existe on le met a jour mais en
-        {
+                    File add_stat = SPIFFS.open(file_stat, FILE_WRITE); // on ouvre le fichier en ecriture
+                    File old_stat = SPIFFS.open(file_old_stat, FILE_READ);
+                    if (add_stat && old_stat) // on verifie que les fichier est bien ouvert
+                    {
+                        value_day_json = (value_capteur[i][0] == NULL) ? "null" : value_capteur[i][0];
+                        data_json = "[\n"; // ouverture d'un array de donnée
+                        data_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_day_json;
+                        for (int j = 1; j < 24; j++) // on incremente toute les heures
+                        {
+                            value_day_json = (value_capteur[i][j] == NULL) ? "null" : value_capteur[i][j];
+                            data_json += "," + value_day_json;
+                        }
+                        data_json += "]},\n";
+                        add_stat.print(data_json);
+                        while (old_stat.available()) // on va lire le fichier en supprimant la premiere ligne "[\n"
+                        {
 
-            File create_stat = SPIFFS.open(file_stat, FILE_APPEND);
-            if (create_stat) // on verifie que le fichier c'est bien crée
-            {
-                value_temp = (temp_eau_day[i][0] == NULL) ? "null" : temp_eau_day[i][0];
-                data_json = "[\n"; // ouverture d'un array de donnée
-                data_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_temp;
-                for (int j = 1; j < 24; j++) // on incremente toute les heures
-                {
-                    value_temp = (temp_eau_day[i][j] == NULL) ? "null" : temp_eau_day[i][j];
-                    data_json += "," + value_temp;
+                            add_stat.print(old_stat.readString());
+                        }
+                        old_stat.close();
+                        add_stat.close();
+                        SPIFFS.remove(file_old_stat);
+                    }
+                    Serial.print(F("Mise a jour du capteur du fichier de statistique du capteur : "));
+                    Serial.println(name_file[i]);
                 }
-                data_json += "]}\n";
-                data_json += "]";
-                create_stat.print(data_json);
-                create_stat.close();
-                Serial.print(F("Création du fichier de statistique du capteur : "));
-                Serial.println(name_temp[i]);
             }
+            else // si le fichier n'exite pas on le crée
+            {
+
+                File create_stat = SPIFFS.open(file_stat, FILE_APPEND);
+                if (create_stat) // on verifie que le fichier c'est bien crée
+                {
+                    value_day_json = (value_capteur[i][0] == NULL) ? "null" : value_capteur[i][0];
+                    data_json = "[\n"; // ouverture d'un array de donnée
+                    data_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_day_json;
+                    for (int j = 1; j < 24; j++) // on incremente toute les heures
+                    {
+                        value_day_json = (value_capteur[i][j] == NULL) ? "null" : value_capteur[i][j];
+                        data_json += "," + value_day_json;
+                    }
+                    data_json += "]}\n";
+                    data_json += "]";
+                    create_stat.print(data_json);
+                    create_stat.close();
+                    Serial.print(F("Création du fichier de statistique du capteur : "));
+                    Serial.println(name_file[i]);
+                }
+            }
+            delay(50);
         }
     }
 }
@@ -713,15 +771,79 @@ void maj_stat()
         int hour = dtime.hour;
         if (hour == 0) // si il est minuit on enregistre la journée dans le fichier
         {
-            save_stat();
+            save_stat("ds18b20");
+            save_stat("bme280");
+            save_stat("ads1115");
         }
         for (int i = 0; i < 3; i++) // on enregistre les capteur de temperature DS18B20
         {
-            temp_eau_day[i][hour] = temp_eau[i];
+            ds18b20_day[i][hour] = temp_eau[i];
             Serial.print(F("Enregistrement horraire de la sonde : "));
             Serial.println(name_temp[i]);
         }
+        for (int i = 0; i < 3; i++) // on enregistre les capteur de temperature bme280
+        {
+            bme280_day[i][hour] = val_bme280[i];
+            Serial.print(F("Enregistrement horraire de la sonde : "));
+            Serial.println(name_bme280[i]);
+        }
+        for (int i = 0; i < 2; i++) // on enregistre les capteur ph et redox
+        {
+            ads1115_day[i][hour] = val_ads1115[i];
+            Serial.print(F("Enregistrement horraire de la sonde : "));
+            Serial.println(name_ads1115[i]);
+        }
         // on enregistrera ici les prochaines sondes
         check_stat = false;
+    }
+}
+void check_bme280(void *pvParameters)
+{
+    for (;;)
+    {
+        Serial.printf("\nlecture capteur bme280 core : %d\n", xPortGetCoreID());
+        val_bme280[0] = String(bme280.readTempC(), 1);
+        Serial.print(F("Temperature exterieur : "));
+        Serial.println(val_bme280[0]);
+        val_bme280[1] = String(bme280.readHumidity(), 1);
+        Serial.print(F("Humidité exterieur : "));
+        Serial.println(val_bme280[1]);
+        val_bme280[2] = int(bme280.readPressure() + (altitude / 8.3));
+        Serial.print(F("préssion atmosphérique : "));
+        Serial.println(val_bme280[2]);
+        vTaskDelay(pdMS_TO_TICKS(33500)); // lecture touyes les 33,5 secondes
+    }
+}
+
+void check_ads(void *pvParameters)
+{
+    for (;;)
+    {
+        if (ads.checkADS1115())
+        {
+            Serial.printf("\nlecture capteur ads1115 core : %d\n", xPortGetCoreID());
+            int16_t adc0 = 0, adc1 = 0;
+            adc0 = ads.readVoltage(0);
+            Serial.print(F("A0:"));
+            Serial.print(adc0);
+            Serial.println(F(" mV"));
+            float value = map(int(adc0), 2652, 3138, 7010, 4000) / 1000.0;
+            val_ads1115[0] = String(value, 1);
+            Serial.print(F("lecture PH: "));
+            Serial.println(val_ads1115[0]);
+            adc1 += ads.readVoltage(1);
+            val_ads1115[1] = String((int(adc1) - 2500) - cal_redox);
+            Serial.print(F("\nA1:"));
+            Serial.print(adc1);
+            Serial.println(F("mV"));
+            Serial.print(F("lecture redox :"));
+            Serial.print(val_ads1115[1]);
+            Serial.println(F(" mV\n"));
+        }
+        else
+        {
+            Serial.println("ADS1115 absent!");
+        }
+        vTaskDelay(pdMS_TO_TICKS(300500)); // lecture toutes les 5 minutes
     }
 }
