@@ -70,8 +70,6 @@ function select(sens) {
 }
 function go_graph(index) {
     let heure = new Date().getHours();
-
-
     let h = c.height;
     let w = c.width;
     let ctx = c.getContext('2d');
@@ -85,7 +83,7 @@ function go_graph(index) {
     // un = Math.round(Math.max(...dataX)/15)
     let un = Math.round((Math.max(...dataX) - Math.min(...dataX)) / 10);
     ys = (w - 40) / dataY.length
-    dataT = []
+    let dataT = []
 
 
     chartLine();
