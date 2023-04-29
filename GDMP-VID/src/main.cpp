@@ -20,9 +20,13 @@ Fonction explode de Vikas Kandari https://arduino.stackexchange.com/questions/10
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+// bibliotheque de convertion de timestamp
+#include <DTime.h>
 #include "SPIFFS.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <BlueDot_BME280.h>
+#include <DFRobot_ADS1115.h>
 #define ONE_WIRE_BUS 4
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -30,6 +34,11 @@ OneWire oneWire(ONE_WIRE_BUS);
 
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
+
+// atribution du capteur bme28
+BlueDot_BME280 bme280 = BlueDot_BME280();
+DFRobot_ADS1115 ads(&Wire);
+
 // chargement du fichier de confuration
 #include <config.h>
 
@@ -113,10 +122,32 @@ void setup()
   Serial.println(sensors.getResolution(ad_T_EAU_C), DEC);
   /*************************************************************/
 
+// initialisation du capteur BME280
+  bme280.parameter.I2CAddress = 0x76; 
+  bme280.parameter.sensorMode = 0b11;
+  bme280.parameter.IIRfilter = 0b100;
+  bme280.parameter.humidOversampling = 0b101;
+  bme280.parameter.tempOversampling = 0b101;
+  bme280.parameter.pressOversampling = 0b101;
+  bme280.parameter.pressureSeaLevel = 1013.25;
+  bme280.parameter.tempOutsideCelsius = 15;
+
+  bme280.init(33,32); // petite modif réalisé dans la librairie d'origine pour selectionner les pin I2C
+  delay(100);
+  
+    ads.setAddr_ADS1115(ADS1115_IIC_ADDRESS1);   // 0x48
+    ads.setGain(eGAIN_ONE);   // 2/3x gain
+    ads.setMode(eMODE_SINGLE);       // single-shot mode
+    ads.setRate(eRATE_128);          // 128SPS (default)
+    ads.setOSMode(eOSMODE_SINGLE);   // Set to start a single-conversion
+    ads.init();
   delay(1000);
 
   xTaskCreate(check_ds18b20, "vTask1", 10000, NULL, 1, NULL);
-
+  delay(1000);
+  xTaskCreate(check_bme280, "vTask2", 10000, NULL, 1, NULL);
+  delay(1000);
+  xTaskCreate(check_ads, "vTask3", 10000, NULL, 1, NULL);
   // on affiche la page par défaut sur l'ip
   server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request)
             {
@@ -129,7 +160,7 @@ void setup()
               
     String reponse_json = "";
     String  json_index = "{";
-            json_index += "\"T_EXT\":\"" + String(random(-50, 400) / 10.0, 1) + "\",";
+            json_index += "\"T_EXT\":\"" + val_bme280[0] + "\",";
             if (mode_relay[num_index("BTN_ETAT_ECL")] == 2)
             {
               json_index += "\"ETAT_ECL\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_ECL")]] + " " + etat_relay_txt[etat_relay[num_index("BTN_ETAT_ECL")]] + "\",";
@@ -139,10 +170,10 @@ void setup()
               json_index += "\"ETAT_ECL\":\"" + mode_relay_txt[mode_relay[num_index("BTN_ETAT_ECL")]] + "\",";
             }
             json_index += "\"T_EAU_H\":\"" + temp_eau[0] + "\",";
-            json_index += "\"H_EXT\":\"" + String(random(200, 980) / 10.0, 1) + "\",";
-            json_index += "\"HPA\":\"" + String(random(950, 1025)) + "\",";
-            json_index += "\"PH\":\"" + String(random(40, 140) / 10.0, 1) + "\",";
-            json_index += "\"REDOX\":\"" + String(random(250, 780)) + "\",";
+            json_index += "\"H_EXT\":\"" + val_bme280[1] + "\",";
+            json_index += "\"HPA\":\"" + val_bme280[2] + "\",";
+            json_index += "\"PH\":\"" + val_ads1115[0] + "\",";
+            json_index += "\"REDOX\":\"" + val_ads1115[1] + "\",";
             json_index += "\"T_EAU_C\":\"" + temp_eau[2] + "\",";
             if (mode_relay[num_index("BTN_ETAT_P_CHAUD")] == 2)
             {
@@ -340,7 +371,9 @@ void setup()
     uint8_t nb_params = request->params();
     uint8_t index_sonde;
     String reponse_json;
-    String value_temp;
+    String value_ds18b20;
+    String value_bme280;
+    String value_ads1115;
     // on verifie la presence de parametre
     if (nb_params)
     {
@@ -365,12 +398,56 @@ void setup()
         if(param_value[1] == "DS18B20"){
         index_sonde = num_index(param_value[0],2);
         reponse_json = "[\n";
-        value_temp = (temp_eau_day[index_sonde][0] == NULL) ? "null" : temp_eau_day[index_sonde][0];
-        reponse_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_temp;
+        value_ds18b20 = (ds18b20_day[index_sonde][0] == NULL) ? "null" : ds18b20_day[index_sonde][0];
+        reponse_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_ds18b20;
                 for (int j = 1; j <= dtime.hour; j++) // on incremente toute les heures
                 {
-                    value_temp = (temp_eau_day[index_sonde][j] == NULL) ? "null" : temp_eau_day[index_sonde][j];
-                    reponse_json += "," + value_temp;
+                    value_ds18b20 = (ds18b20_day[index_sonde][j] == NULL) ? "null" : ds18b20_day[index_sonde][j];
+                    reponse_json += "," + value_ds18b20;
+                }
+                reponse_json += "]}\n";
+                reponse_json += "]";
+        // presense de action = del on supprime les stats
+                if (param_value[2] != NULL){
+                  String file_del = "/stat/" + param_value[0] + ".json";
+                  if( param_value[2] == "del" && SPIFFS.exists(file_del)) {
+                    SPIFFS.remove(file_del);
+                    Serial.print(F("Suppression du fichier de statistique de la sonde : "));
+                    Serial.println(param_value[0]);
+                  }
+                }
+        }
+        if(param_value[1] == "BME280"){
+        index_sonde = num_index(param_value[0],3);
+        reponse_json = "[\n";
+        value_bme280 = (bme280_day[index_sonde][0] == NULL) ? "null" : bme280_day[index_sonde][0];
+        reponse_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_bme280;
+                for (int j = 1; j <= dtime.hour; j++) // on incremente toute les heures
+                {
+                    value_bme280 = (bme280_day[index_sonde][j] == NULL) ? "null" : bme280_day[index_sonde][j];
+                    reponse_json += "," + value_bme280;
+                }
+                reponse_json += "]}\n";
+                reponse_json += "]";
+        // presense de action = del on supprime les stats
+                if (param_value[2] != NULL){
+                  String file_del = "/stat/" + param_value[0] + ".json";
+                  if( param_value[2] == "del" && SPIFFS.exists(file_del)) {
+                    SPIFFS.remove(file_del);
+                    Serial.print(F("Suppression du fichier de statistique de la sonde : "));
+                    Serial.println(param_value[0]);
+                  }
+                }
+        }
+        if(param_value[1] == "ADS1115"){
+        index_sonde = num_index(param_value[0],4);
+        reponse_json = "[\n";
+        value_ads1115 = (ads1115_day[index_sonde][0] == NULL) ? "null" : ads1115_day[index_sonde][0];
+        reponse_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_ads1115;
+                for (int j = 1; j <= dtime.hour; j++) // on incremente toute les heures
+                {
+                    value_ads1115 = (ads1115_day[index_sonde][j] == NULL) ? "null" : ads1115_day[index_sonde][j];
+                    reponse_json += "," + value_ads1115;
                 }
                 reponse_json += "]}\n";
                 reponse_json += "]";
