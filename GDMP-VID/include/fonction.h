@@ -3,6 +3,7 @@
 // déclaration de la class dtime
 DTime dtime;          // dtime -> gestion de la timestamp de la carte
 DTime timestamp_prog; // timestamp_prog -> gestion de timestamp de programmation horaire
+DTime timestamp_stat; // timestamp_stat -> génération d'une date - 60 minutes pour l'enregistrement des stat a minuit avec la bonne date day-1
 
 // variable texte pour la date
 String day_txt[7] = {"Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"};                                                                           // day_txt -> mise en forme texte de la journée
@@ -74,6 +75,11 @@ String date_format(String format = "txt_long")
     if (format == "number")
     {
         result = decimate(dtime.day) + "/" + decimate(dtime.month) + "/" + dtime.year;
+    }
+    if (format == "stat")
+    {
+        timestamp_stat.setTimestamp(timestamp-4000); // on génére une date a day-1 pour les stat
+        result = decimate(timestamp_stat.day) + "/" + decimate(timestamp_stat.month) + "/" + timestamp_stat.year;
     }
     return result;
 }
@@ -655,7 +661,6 @@ void save_stat(String sonde)
     String value_capteur[3][24]; // stockage data capteur
     String name_file[3];         // stockage nom des capteurs
     uint8_t nb_sonde = 0;
-    dtime.setTimestamp(timestamp);
     if (sonde == "ds18b20")
     {
         memmove(value_capteur, ds18b20_day, sizeof(ds18b20_day)); // on copie  les datas dans une variable dédié a la fonction
@@ -714,7 +719,7 @@ void save_stat(String sonde)
                     {
                         value_day_json = (value_capteur[i][0] == NULL) ? "null" : value_capteur[i][0];
                         data_json = "[\n"; // ouverture d'un array de donnée
-                        data_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_day_json;
+                        data_json += "{\"date\":\"" + date_format("stat") + "\",\"stat\":[" + value_day_json;
                         for (int j = 1; j < 24; j++) // on incremente toute les heures
                         {
                             value_day_json = (value_capteur[i][j] == NULL) ? "null" : value_capteur[i][j];
@@ -728,12 +733,16 @@ void save_stat(String sonde)
                             add_stat.print(old_stat.readString());
                         }
                         old_stat.close();
+                        delay(10);
                         add_stat.close();
+                        delay(10);
                         SPIFFS.remove(file_old_stat);
+                        delay(10);
                     }
                     Serial.print(F("Mise a jour du capteur du fichier de statistique du capteur : "));
                     Serial.println(name_file[i]);
                 }
+                delay(50);
             }
             else // si le fichier n'exite pas on le crée
             {
@@ -743,7 +752,7 @@ void save_stat(String sonde)
                 {
                     value_day_json = (value_capteur[i][0] == NULL) ? "null" : value_capteur[i][0];
                     data_json = "[\n"; // ouverture d'un array de donnée
-                    data_json += "{\"date\":\"" + date_format("number") + "\",\"stat\":[" + value_day_json;
+                    data_json += "{\"date\":\"" + date_format("stat") + "\",\"stat\":[" + value_day_json;
                     for (int j = 1; j < 24; j++) // on incremente toute les heures
                     {
                         value_day_json = (value_capteur[i][j] == NULL) ? "null" : value_capteur[i][j];
@@ -759,7 +768,9 @@ void save_stat(String sonde)
             }
             delay(50);
         }
+        delay(50);
     }
+    delay(50);
 }
 
 void maj_stat()
@@ -772,26 +783,32 @@ void maj_stat()
         if (hour == 0) // si il est minuit on enregistre la journée dans le fichier
         {
             save_stat("ds18b20");
+            delay(100);
             save_stat("bme280");
+            delay(100);
             save_stat("ads1115");
+            delay(100);
         }
         for (int i = 0; i < 3; i++) // on enregistre les capteur de temperature DS18B20
         {
             ds18b20_day[i][hour] = temp_eau[i];
             Serial.print(F("Enregistrement horraire de la sonde : "));
             Serial.println(name_temp[i]);
+            delay(10);
         }
         for (int i = 0; i < 3; i++) // on enregistre les capteur de temperature bme280
         {
             bme280_day[i][hour] = val_bme280[i];
             Serial.print(F("Enregistrement horraire de la sonde : "));
             Serial.println(name_bme280[i]);
+            delay(10);
         }
         for (int i = 0; i < 2; i++) // on enregistre les capteur ph et redox
         {
             ads1115_day[i][hour] = val_ads1115[i];
             Serial.print(F("Enregistrement horraire de la sonde : "));
             Serial.println(name_ads1115[i]);
+            delay(10);
         }
         // on enregistrera ici les prochaines sondes
         check_stat = false;
@@ -827,23 +844,24 @@ void check_ads(void *pvParameters)
             Serial.print(F("A0:"));
             Serial.print(adc0);
             Serial.println(F(" mV"));
-            float value = map(int(adc0), 2652, 3138, 7010, 4000) / 1000.0;
-            val_ads1115[0] = String(value, 1);
-            Serial.print(F("lecture PH: "));
+            float value_PH = map(int(adc0), 2566, 3027, 7000, 4100) / 1000.0;
+            val_ads1115[0] = String(value_PH, 1);
+            Serial.print(F("lecture PH : "));
             Serial.println(val_ads1115[0]);
-            adc1 += ads.readVoltage(1);
-            val_ads1115[1] = String((int(adc1) - 2500) - cal_redox);
-            Serial.print(F("\nA1:"));
+            
+            adc1 = ads.readVoltage(1);
+            Serial.print(F("A1:"));
             Serial.print(adc1);
-            Serial.println(F("mV"));
-            Serial.print(F("lecture redox :"));
-            Serial.print(val_ads1115[1]);
-            Serial.println(F(" mV\n"));
+            Serial.println(F(" mV"));
+            int value_REDOX = map(int(adc1), 4095, 3839, 650, 475) ;
+            val_ads1115[1] = String(value_REDOX);
+            Serial.print(F("lecture REDOX : "));
+            Serial.println(val_ads1115[1]);
         }
         else
         {
             Serial.println("ADS1115 absent!");
         }
-        vTaskDelay(pdMS_TO_TICKS(300500)); // lecture toutes les 5 minutes
+        vTaskDelay(pdMS_TO_TICKS(300000)); //  lecture toutes les 5 minutes
     }
 }
