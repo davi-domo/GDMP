@@ -143,11 +143,12 @@ void setup()
     ads.init();
   delay(1000);
 
-  xTaskCreate(check_ds18b20, "vTask1", 10000, NULL, 1, NULL);
+  xTaskCreate(check_ds18b20, "vTask1", 10000, NULL, 3, NULL);
   delay(1000);
-  xTaskCreate(check_bme280, "vTask2", 10000, NULL, 1, NULL);
+  xTaskCreate(check_bme280, "vTask2", 10000, NULL, 2, NULL);
   delay(1000);
   xTaskCreate(check_ads, "vTask3", 10000, NULL, 1, NULL);
+  delay(1000);
   // on affiche la page par défaut sur l'ip
   server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request)
             {
